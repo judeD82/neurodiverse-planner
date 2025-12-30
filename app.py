@@ -8,7 +8,7 @@ from logic import (
     apply_work_mode_modifier,
     build_day_summary,
     save_day_entry,
-    generate_pattern_reflection
+    generate_ml_reflection
 )
 
 # -------------------------------------------------
@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 # -------------------------------------------------
-# Fancy mappings
+# Visual language
 # -------------------------------------------------
 
 DAY_TYPE_ICONS = {
@@ -42,16 +42,14 @@ DAY_TYPE_WHISPERS = {
 STUCK_NUDGES = {
     "Survival Day": "If you’re stuck, try standing up and drinking some water.",
     "Maintenance Day": "If you’re stuck, try opening the task without committing to finishing it.",
-    "Progress Day": "If you’re stuck, try setting a 25-minute timer for the priority task.",
-    "Flow Day": "If you’re stuck, remove one distraction before you begin."
+    "Progress Day": "If you’re stuck, try setting a 25-minute timer.",
+    "Flow Day": "If you’re stuck, remove one distraction before starting."
 }
 
-# -------------------------------------------------
-# Helpers
-# -------------------------------------------------
 
 def soft_card():
     return st.container(border=True)
+
 
 # -------------------------------------------------
 # Intro
@@ -60,15 +58,15 @@ def soft_card():
 st.markdown("## Daily Capacity Planner")
 st.markdown(
     "A calm, capacity-aware planning tool for neurodivergent freelancers.\n\n"
-    "This adapts to how you feel **today**. There is nothing to optimise."
+    "**This tool listens. It does not optimise.**"
 )
 
-with st.expander("How this works"):
+with st.expander("About patterns & learning"):
     st.markdown(
-        "- Answer honestly. This is for *you*.\n"
-        "- Structure adapts to capacity, not willpower.\n"
-        "- Low-energy days are valid days.\n"
-        "- You can stop at any point."
+        "**Quiet mode:** The tool notices recurring shapes over time.\n\n"
+        "**Plain mode:** It groups similar days to reflect patterns.\n\n"
+        "**Explicit mode:** This uses simple machine learning to group similar days.\n\n"
+        "Nothing is predicted. Nothing is judged. Nothing is sent anywhere."
     )
 
 st.markdown("---")
@@ -102,8 +100,7 @@ st.markdown("---")
 capacity_score = calculate_capacity_score(energy, focus, emotional_load)
 day_type = determine_day_type(capacity_score)
 
-icon = DAY_TYPE_ICONS.get(day_type, "")
-st.markdown(f"### {icon} {day_type}")
+st.markdown(f"### {DAY_TYPE_ICONS.get(day_type, '')} {day_type}")
 st.caption(DAY_TYPE_WHISPERS.get(day_type, ""))
 
 base_structure = get_base_structure(day_type)
@@ -122,42 +119,41 @@ st.markdown("---")
 
 with soft_card():
     st.markdown("### What would be enough for today?")
-
-    essential_task = st.text_input(
-        "One essential thing",
-        placeholder="Small, concrete, realistic"
-    )
+    essential_task = st.text_input("One essential thing")
 
     support_task = None
     optional_task = None
 
     if day_type in ["Maintenance Day", "Progress Day", "Flow Day"]:
-        support_task = st.text_input(
-            "One supportive or low-effort task",
-            placeholder="Admin, prep, follow-up"
-        )
+        support_task = st.text_input("One supportive task")
 
-    if st.checkbox("Add an optional bonus task"):
-        optional_task = st.text_input(
-            "Optional task",
-            placeholder="Only if it feels genuinely light"
-        )
+    if st.checkbox("Add optional bonus task"):
+        optional_task = st.text_input("Optional task")
 
 st.markdown("---")
 
 # -------------------------------------------------
-# Save
+# Save + Learn
 # -------------------------------------------------
 
 with soft_card():
     st.markdown("### Save your plan")
-    st.caption("Nothing is stored remotely. This stays with you.")
 
-    if not essential_task:
-        st.caption("Add an essential task to enable export.")
+    enable_learning = st.checkbox(
+        "Allow this tool to notice patterns over time (local only)",
+        value=False
+    )
 
     if st.button("Create text summary") and essential_task:
-        save_day_entry(day_type, work_mode, capacity_score)
+        if enable_learning:
+            save_day_entry(
+                day_type,
+                work_mode,
+                capacity_score,
+                energy,
+                focus,
+                emotional_load
+            )
 
         summary_text = build_day_summary(
             energy,
@@ -178,21 +174,21 @@ with soft_card():
             mime="text/plain"
         )
 
-        st.success("Your plan is ready. You can stop here if you want.")
+        st.success("Your plan is ready. You can stop here.")
 
 st.markdown("---")
 
 # -------------------------------------------------
-# Pattern mirror (the magic)
+# ML Reflection (OPT-IN RESULT)
 # -------------------------------------------------
 
 st.markdown("### Quiet patterns")
 
-reflection = generate_pattern_reflection()
-if reflection:
-    st.info(reflection)
+ml_reflection = generate_ml_reflection()
+if ml_reflection:
+    st.info(ml_reflection)
 else:
-    st.caption("Patterns will appear here over time.")
+    st.caption("Patterns will appear here gently over time.")
 
 st.markdown("---")
 
@@ -202,11 +198,11 @@ st.markdown("---")
 
 st.markdown("### Closing the day")
 st.checkbox("I worked within my capacity today")
-st.text_input("One word for today", placeholder="Optional")
+st.text_input("One word for today")
 
 st.progress(1.0, text="That’s enough for today.")
 
 st.caption(
-    "This is not a productivity system. "
-    "It’s a way of listening to your capacity."
+    "This tool reflects experience. "
+    "You remain in control."
 )
