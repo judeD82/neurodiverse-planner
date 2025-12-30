@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import date
 
 from logic import (
     calculate_capacity_score,
@@ -130,7 +131,10 @@ st.write(
     "Nothing is stored or tracked."
 )
 
-if st.button("Generate day summary"):
+if not essential_task:
+    st.caption("Add one essential task to enable export.")
+
+if st.button("Generate day summary") and essential_task:
     summary_text = build_day_summary(
         energy=energy,
         focus=focus,
@@ -146,7 +150,7 @@ if st.button("Generate day summary"):
     st.download_button(
         label="Download as .txt",
         data=summary_text,
-        file_name="daily_plan.txt",
+        file_name=f"daily_plan_{date.today().isoformat()}.txt",
         mime="text/plain"
     )
 
