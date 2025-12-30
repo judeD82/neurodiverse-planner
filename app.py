@@ -6,7 +6,9 @@ from logic import (
     determine_day_type,
     get_base_structure,
     apply_work_mode_modifier,
-    build_day_summary
+    build_day_summary,
+    save_day_entry,
+    generate_pattern_reflection
 )
 
 # -------------------------------------------------
@@ -77,7 +79,6 @@ st.markdown("---")
 
 with soft_card():
     st.markdown("### How are you showing up today?")
-
     energy = st.slider("Energy", 1, 5, 3)
     focus = st.slider("Focus", 1, 5, 3)
     emotional_load = st.slider("Emotional load", 1, 5, 3)
@@ -150,22 +151,24 @@ st.markdown("---")
 
 with soft_card():
     st.markdown("### Save your plan")
-    st.caption("Nothing is stored. This is just for you.")
+    st.caption("Nothing is stored remotely. This stays with you.")
 
     if not essential_task:
         st.caption("Add an essential task to enable export.")
 
     if st.button("Create text summary") and essential_task:
+        save_day_entry(day_type, work_mode, capacity_score)
+
         summary_text = build_day_summary(
-            energy=energy,
-            focus=focus,
-            emotional_load=emotional_load,
-            work_mode=work_mode,
-            day_type=day_type,
-            structure=final_structure,
-            essential_task=essential_task,
-            support_task=support_task,
-            optional_task=optional_task
+            energy,
+            focus,
+            emotional_load,
+            work_mode,
+            day_type,
+            final_structure,
+            essential_task,
+            support_task,
+            optional_task
         )
 
         st.download_button(
@@ -176,6 +179,20 @@ with soft_card():
         )
 
         st.success("Your plan is ready. You can stop here if you want.")
+
+st.markdown("---")
+
+# -------------------------------------------------
+# Pattern mirror (the magic)
+# -------------------------------------------------
+
+st.markdown("### Quiet patterns")
+
+reflection = generate_pattern_reflection()
+if reflection:
+    st.info(reflection)
+else:
+    st.caption("Patterns will appear here over time.")
 
 st.markdown("---")
 
