@@ -1,6 +1,8 @@
 from datetime import date
 import json
 import os
+import numpy as np
+from sklearn.cluster import KMeans
 
 DATA_FILE = "pattern_memory.json"
 
@@ -25,11 +27,11 @@ def determine_day_type(capacity_score):
 
 
 # -------------------------------------------------
-# Day structures
+# Structures
 # -------------------------------------------------
 
 def get_base_structure(day_type):
-    structures = {
+    return {
         "Survival Day": [
             "One essential task only",
             "One grounding or body-based activity",
@@ -50,33 +52,33 @@ def get_base_structure(day_type):
             "One creative or revenue-generating task",
             "One intentional closing ritual"
         ]
-    }
-    return structures.get(day_type, [])
+    }.get(day_type, [])
 
 
 def apply_work_mode_modifier(structure, work_mode):
     modified = structure.copy()
-
     if work_mode == "Client Day":
         modified.append("Buffer time between interactions")
         modified.append("Low-demand task after client work")
     else:
         modified.append("Protect uninterrupted focus")
         modified.append("Optional exploratory or creative time")
-
     return modified
 
 
 # -------------------------------------------------
-# Pattern memory (local, ethical)
+# Local pattern memory
 # -------------------------------------------------
 
-def save_day_entry(day_type, work_mode, capacity_score):
+def save_day_entry(day_type, work_mode, capacity_score, energy, focus, emotional_load):
     entry = {
         "date": date.today().isoformat(),
         "day_type": day_type,
         "work_mode": work_mode,
-        "capacity": capacity_score
+        "capacity": capacity_score,
+        "energy": energy,
+        "focus": focus,
+        "emotional_load": emotional_load
     }
 
     data = []
@@ -93,43 +95,51 @@ def save_day_entry(day_type, work_mode, capacity_score):
         json.dump(data, f, indent=2)
 
 
-def generate_pattern_reflection():
+# -------------------------------------------------
+# ML Pattern Clustering (OPT-IN)
+# -------------------------------------------------
+
+def generate_ml_reflection():
     if not os.path.exists(DATA_FILE):
         return None
 
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    if len(data) < 6:
+        return None
+
+    features = []
+    for d in data:
+        work_mode_encoded = 1 if d["work_mode"] == "Client Day" else 0
+        features.append([
+            d["energy"],
+            d["focus"],
+            d["emotional_load"],
+            d["capacity"],
+            work_mode_encoded
+        ])
+
+    X = np.array(features)
+
     try:
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
+        kmeans = KMeans(n_clusters=2, n_init=10, random_state=42)
+        labels = kmeans.fit_predict(X)
     except Exception:
         return None
 
-    if len(data) < 5:
-        return None
+    recent_label = labels[-1]
+    cluster_count = list(labels).count(recent_label)
 
-    recent = data[-10:]
-    day_types = [d["day_type"] for d in recent]
-    work_modes = [d["work_mode"] for d in recent]
-
-    most_common_day = max(set(day_types), key=day_types.count)
-
-    reflections = [
-        f"Recently, **{most_common_day}** days have been most common."
-    ]
-
-    if work_modes.count("Client Day") > work_modes.count("Solo Day"):
-        reflections.append(
-            "Client-facing days appear frequently. These often carry hidden emotional load."
-        )
-
-    reflections.append(
-        "Patterns are information, not instructions. Nothing here needs fixing."
+    return (
+        "Some of your days naturally group together.\n\n"
+        f"This current pattern has appeared **{cluster_count} times** recently.\n\n"
+        "This isn’t a prediction or recommendation — just a reflection of lived patterns."
     )
-
-    return " ".join(reflections)
 
 
 # -------------------------------------------------
-# Text export
+# Export
 # -------------------------------------------------
 
 def build_day_summary(
@@ -160,7 +170,6 @@ def build_day_summary(
     lines.append("")
     lines.append("TASKS:")
     lines.append(f"* Essential: {essential_task}")
-
     if support_task:
         lines.append(f"* Support: {support_task}")
     if optional_task:
