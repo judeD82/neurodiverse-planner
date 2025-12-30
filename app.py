@@ -14,67 +14,77 @@ from logic import (
 # -------------------------------------------------
 
 st.set_page_config(
-    page_title="Neurodiverse Freelancer Planner",
+    page_title="Daily Capacity Planner",
     layout="centered"
 )
 
 # -------------------------------------------------
-# Intro
+# Soft intro
 # -------------------------------------------------
 
-st.title("Daily Capacity Planner")
-st.write(
-    "This tool helps you structure your freelance workday "
-    "based on energy, focus, and emotional load — not willpower."
+st.markdown("## Daily Capacity Planner")
+st.markdown(
+    "A gentle, capacity-aware planning tool for neurodivergent freelancers.\n\n"
+    "This adapts to how you feel **today**. There is nothing to optimise."
 )
+
+st.markdown("---")
+
+# -------------------------------------------------
+# How this works (optional)
+# -------------------------------------------------
+
+with st.expander("How to use this"):
+    st.markdown(
+        "- Answer honestly. This is for *you*.\n"
+        "- The structure responds to your capacity, not willpower.\n"
+        "- Low-energy days are valid days.\n"
+        "- You can stop at any point."
+    )
 
 # -------------------------------------------------
 # 1. Check-in
 # -------------------------------------------------
 
-st.header("1. Quick check-in")
+st.markdown("### How are you showing up today?")
 
 energy = st.slider(
-    "Energy level",
-    min_value=1,
-    max_value=5,
-    value=3,
+    "Energy",
+    1, 5, 3,
     help="Physical and mental energy combined"
 )
 
 focus = st.slider(
-    "Focus clarity",
-    min_value=1,
-    max_value=5,
-    value=3,
+    "Focus",
+    1, 5, 3,
     help="How easy it feels to concentrate"
 )
 
 emotional_load = st.slider(
     "Emotional load",
-    min_value=1,
-    max_value=5,
-    value=3,
-    help="Stress, anxiety, emotional processing, background noise"
+    1, 5, 3,
+    help="Stress, anxiety, background emotional noise"
 )
 
+st.markdown("---")
+
 # -------------------------------------------------
-# 2. Work mode
+# 2. Context
 # -------------------------------------------------
 
-st.header("2. Work context")
+st.markdown("### What kind of workday is this?")
 
 work_mode = st.radio(
-    "What kind of workday is this?",
-    options=["Client Day", "Solo Day"],
-    help="Client-facing work often consumes more emotional energy"
+    "",
+    ["Client Day", "Solo Day"],
+    horizontal=True
 )
 
-# -------------------------------------------------
-# 3. Capacity interpretation
-# -------------------------------------------------
+st.markdown("---")
 
-st.header("3. Today’s shape")
+# -------------------------------------------------
+# 3. Interpretation
+# -------------------------------------------------
 
 capacity_score = calculate_capacity_score(
     energy=energy,
@@ -84,24 +94,26 @@ capacity_score = calculate_capacity_score(
 
 day_type = determine_day_type(capacity_score)
 
-st.subheader(f"Today is a **{day_type}**")
-st.caption(f"Capacity score: {capacity_score}")
+st.markdown(f"### Today looks like a **{day_type}**")
+st.caption("This is descriptive, not a judgement.")
 
 base_structure = get_base_structure(day_type)
 final_structure = apply_work_mode_modifier(base_structure, work_mode)
 
 for item in final_structure:
-    st.write(f"- {item}")
+    st.markdown(f"- {item}")
+
+st.markdown("---")
 
 # -------------------------------------------------
-# 4. Define success (gently)
+# 4. What would be enough?
 # -------------------------------------------------
 
-st.header("4. Define success")
+st.markdown("### What would be enough for today?")
 
 essential_task = st.text_input(
-    "One thing that would make today feel okay:",
-    placeholder="Keep this small and concrete"
+    "One essential thing",
+    placeholder="Small, concrete, and realistic"
 )
 
 support_task = None
@@ -109,32 +121,33 @@ optional_task = None
 
 if day_type in ["Maintenance Day", "Progress Day", "Flow Day"]:
     support_task = st.text_input(
-        "One supporting or low-friction task:",
-        placeholder="Admin, prep, follow-up, etc."
+        "One supportive or low-effort task",
+        placeholder="Admin, prep, follow-up"
     )
 
-add_optional = st.checkbox("Add an optional task (only if it feels light)")
+add_optional = st.checkbox("Add an optional bonus task")
 if add_optional:
     optional_task = st.text_input(
-        "Optional task:",
-        placeholder="This is a bonus, not a requirement"
+        "Optional task",
+        placeholder="Only if it feels genuinely light"
     )
 
+st.markdown("---")
+
 # -------------------------------------------------
-# 5. Save / export
+# 5. Save
 # -------------------------------------------------
 
-st.header("5. Save your day")
+st.markdown("### Save your plan")
 
-st.write(
-    "You can save this plan as a simple text file. "
-    "Nothing is stored or tracked."
+st.caption(
+    "Nothing is stored. This is just for you."
 )
 
 if not essential_task:
-    st.caption("Add one essential task to enable export.")
+    st.caption("Add an essential task to enable export.")
 
-if st.button("Generate day summary") and essential_task:
+if st.button("Create text summary") and essential_task:
     summary_text = build_day_summary(
         energy=energy,
         focus=focus,
@@ -148,17 +161,24 @@ if st.button("Generate day summary") and essential_task:
     )
 
     st.download_button(
-        label="Download as .txt",
-        data=summary_text,
+        "Download .txt",
+        summary_text,
         file_name=f"daily_plan_{date.today().isoformat()}.txt",
         mime="text/plain"
     )
 
+st.markdown("---")
+
 # -------------------------------------------------
-# 6. Close (optional reflection)
+# 6. Gentle close
 # -------------------------------------------------
 
-st.header("6. Close the loop")
+st.markdown("### Closing the day")
 
 st.checkbox("I worked within my capacity today")
-st.text_input("One word for today (optional)")
+st.text_input("One word for today", placeholder="Optional")
+
+st.caption(
+    "This is not a productivity system. "
+    "It’s a way of listening to your capacity."
+)
