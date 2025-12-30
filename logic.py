@@ -1,4 +1,8 @@
 from datetime import date
+import json
+import os
+
+DATA_FILE = "pattern_memory.json"
 
 
 # -------------------------------------------------
@@ -6,17 +10,10 @@ from datetime import date
 # -------------------------------------------------
 
 def calculate_capacity_score(energy, focus, emotional_load):
-    """
-    Simple, transparent capacity calculation.
-    Emotional load reduces usable capacity.
-    """
     return energy + focus - emotional_load
 
 
 def determine_day_type(capacity_score):
-    """
-    Maps capacity score to a descriptive day type.
-    """
     if capacity_score <= 3:
         return "Survival Day"
     elif capacity_score <= 6:
@@ -40,8 +37,8 @@ def get_base_structure(day_type):
         ],
         "Maintenance Day": [
             "Two to three light or administrative tasks",
-            "One short focused block (around 25 minutes)",
-            "One intentional break or reset"
+            "One short focused block",
+            "One intentional break"
         ],
         "Progress Day": [
             "One priority task",
@@ -49,12 +46,11 @@ def get_base_structure(day_type):
             "One optional stretch task"
         ],
         "Flow Day": [
-            "One deep work block (60–90 minutes)",
+            "One deep work block",
             "One creative or revenue-generating task",
             "One intentional closing ritual"
         ]
     }
-
     return structures.get(day_type, [])
 
 
@@ -63,49 +59,77 @@ def apply_work_mode_modifier(structure, work_mode):
 
     if work_mode == "Client Day":
         modified.append("Buffer time between interactions")
-        modified.append("A low-demand task after client work")
-
-    elif work_mode == "Solo Day":
-        modified.append("Protect uninterrupted focus where possible")
+        modified.append("Low-demand task after client work")
+    else:
+        modified.append("Protect uninterrupted focus")
         modified.append("Optional exploratory or creative time")
 
     return modified
 
 
 # -------------------------------------------------
-# Gentle pattern reflection
+# Pattern memory (local, ethical)
 # -------------------------------------------------
 
-def generate_pattern_reflection(day_type, work_mode):
-    reflections = {
-        "Survival Day": (
-            "If days like this repeat, it may be a signal to reduce load "
-            "or increase recovery. Today itself requires no fixing."
-        ),
-        "Maintenance Day": (
-            "These days quietly keep everything running. "
-            "They are often more productive than they appear."
-        ),
-        "Progress Day": (
-            "Forward motion often comes from structure paired with compassion."
-        ),
-        "Flow Day": (
-            "Flow is welcome, but not something to chase or sustain at all costs."
-        )
+def save_day_entry(day_type, work_mode, capacity_score):
+    entry = {
+        "date": date.today().isoformat(),
+        "day_type": day_type,
+        "work_mode": work_mode,
+        "capacity": capacity_score
     }
 
-    mode_note = (
-        "Client-facing work often consumes more emotional energy than expected."
-        if work_mode == "Client Day"
-        else
-        "Solo days can reveal natural rhythms when pressure is low."
+    data = []
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f:
+                data = json.load(f)
+        except Exception:
+            data = []
+
+    data.append(entry)
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def generate_pattern_reflection():
+    if not os.path.exists(DATA_FILE):
+        return None
+
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+
+    if len(data) < 5:
+        return None
+
+    recent = data[-10:]
+    day_types = [d["day_type"] for d in recent]
+    work_modes = [d["work_mode"] for d in recent]
+
+    most_common_day = max(set(day_types), key=day_types.count)
+
+    reflections = [
+        f"Recently, **{most_common_day}** days have been most common."
+    ]
+
+    if work_modes.count("Client Day") > work_modes.count("Solo Day"):
+        reflections.append(
+            "Client-facing days appear frequently. These often carry hidden emotional load."
+        )
+
+    reflections.append(
+        "Patterns are information, not instructions. Nothing here needs fixing."
     )
 
-    return reflections.get(day_type, "") + " " + mode_note
+    return " ".join(reflections)
 
 
 # -------------------------------------------------
-# Text export builder
+# Text export
 # -------------------------------------------------
 
 def build_day_summary(
@@ -119,40 +143,32 @@ def build_day_summary(
     support_task=None,
     optional_task=None
 ):
-    today = date.today().isoformat()
-    capacity_score = calculate_capacity_score(energy, focus, emotional_load)
-    reflection = generate_pattern_reflection(day_type, work_mode)
+    lines = [
+        "NEURODIVERSE FREELANCER DAILY PLAN",
+        f"Date: {date.today().isoformat()}",
+        "",
+        f"Work mode: {work_mode}",
+        f"Day type: {day_type}",
+        f"Capacity score: {calculate_capacity_score(energy, focus, emotional_load)}",
+        "",
+        "SUGGESTED STRUCTURE:"
+    ]
 
-    lines = []
-
-    lines.append("NEURODIVERSE FREELANCER DAILY PLAN")
-    lines.append(f"Date: {today}")
-    lines.append("")
-    lines.append(f"Work mode: {work_mode}")
-    lines.append(f"Day type: {day_type}")
-    lines.append(f"Capacity score: {capacity_score}")
-    lines.append("")
-
-    lines.append("SUGGESTED STRUCTURE:")
     for item in structure:
         lines.append(f"- {item}")
 
     lines.append("")
     lines.append("TASKS:")
-    if essential_task:
-        lines.append(f"* Essential: {essential_task}")
+    lines.append(f"* Essential: {essential_task}")
+
     if support_task:
         lines.append(f"* Support: {support_task}")
     if optional_task:
         lines.append(f"* Optional: {optional_task}")
 
     lines.append("")
-    lines.append("REFLECTION:")
-    lines.append(reflection)
-
-    lines.append("")
     lines.append(
-        "Reminder: This plan reflects capacity, not worth. "
+        "This plan reflects capacity, not worth. "
         "Doing less than planned is still valid."
     )
 
