@@ -1,22 +1,21 @@
 from datetime import date
 
 
-# -----------------------------
-# Core capacity calculation
-# -----------------------------
+# -------------------------------------------------
+# Capacity model
+# -------------------------------------------------
 
 def calculate_capacity_score(energy, focus, emotional_load):
     """
-    Simple, transparent capacity model.
-    Higher emotional load reduces usable capacity.
+    Simple, transparent capacity calculation.
+    Emotional load reduces usable capacity.
     """
     return energy + focus - emotional_load
 
 
 def determine_day_type(capacity_score):
     """
-    Maps capacity score to a named day type.
-    Names are intentionally non-judgemental.
+    Maps capacity score to a descriptive day type.
     """
     if capacity_score <= 3:
         return "Survival Day"
@@ -28,15 +27,11 @@ def determine_day_type(capacity_score):
         return "Flow Day"
 
 
-# -----------------------------
-# Day structure logic
-# -----------------------------
+# -------------------------------------------------
+# Day structures
+# -------------------------------------------------
 
 def get_base_structure(day_type):
-    """
-    Returns the baseline structure for each day type.
-    Uses blocks and intentions, not time schedules.
-    """
     structures = {
         "Survival Day": [
             "One essential task only",
@@ -64,48 +59,38 @@ def get_base_structure(day_type):
 
 
 def apply_work_mode_modifier(structure, work_mode):
-    """
-    Adjusts the structure slightly depending on whether
-    the day is client-facing or solo.
-    """
     modified = structure.copy()
 
     if work_mode == "Client Day":
         modified.append("Buffer time between interactions")
-        modified.append("Low-demand task after client work")
+        modified.append("A low-demand task after client work")
 
     elif work_mode == "Solo Day":
         modified.append("Protect uninterrupted focus where possible")
-        modified.append("Optional creative or exploratory time")
+        modified.append("Optional exploratory or creative time")
 
     return modified
 
 
-# -----------------------------
+# -------------------------------------------------
 # Gentle pattern reflection
-# -----------------------------
+# -------------------------------------------------
 
 def generate_pattern_reflection(day_type, work_mode):
-    """
-    Provides a soft reflective prompt.
-    No tracking or judgement. Purely optional insight.
-    """
     reflections = {
         "Survival Day": (
             "If days like this repeat, it may be a signal to reduce load "
             "or increase recovery. Today itself requires no fixing."
         ),
         "Maintenance Day": (
-            "These days often keep everything running quietly in the background. "
-            "They are more productive than they look."
+            "These days quietly keep everything running. "
+            "They are often more productive than they appear."
         ),
         "Progress Day": (
-            "You may notice these days appear when structure meets compassion. "
-            "That balance is worth protecting."
+            "Forward motion often comes from structure paired with compassion."
         ),
         "Flow Day": (
-            "Flow is welcome, but not required to justify rest later. "
-            "Avoid borrowing energy from tomorrow."
+            "Flow is welcome, but not something to chase or sustain at all costs."
         )
     }
 
@@ -119,9 +104,9 @@ def generate_pattern_reflection(day_type, work_mode):
     return reflections.get(day_type, "") + " " + mode_note
 
 
-# -----------------------------
-# Text output builder
-# -----------------------------
+# -------------------------------------------------
+# Text export builder
+# -------------------------------------------------
 
 def build_day_summary(
     energy,
@@ -134,10 +119,6 @@ def build_day_summary(
     support_task=None,
     optional_task=None
 ):
-    """
-    Produces a calm, human-readable .txt summary of the day.
-    """
-
     today = date.today().isoformat()
     capacity_score = calculate_capacity_score(energy, focus, emotional_load)
     reflection = generate_pattern_reflection(day_type, work_mode)
@@ -152,7 +133,7 @@ def build_day_summary(
     lines.append(f"Capacity score: {capacity_score}")
     lines.append("")
 
-    lines.append("SUGGESTED DAY STRUCTURE:")
+    lines.append("SUGGESTED STRUCTURE:")
     for item in structure:
         lines.append(f"- {item}")
 
