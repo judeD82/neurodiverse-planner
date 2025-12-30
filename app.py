@@ -10,92 +10,100 @@ from logic import (
 )
 
 # -------------------------------------------------
-# Page config
+# Config
 # -------------------------------------------------
 
 st.set_page_config(
     page_title="Daily Capacity Planner",
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
 # -------------------------------------------------
-# Soft intro
+# Fancy mappings
+# -------------------------------------------------
+
+DAY_TYPE_ICONS = {
+    "Survival Day": "🪶",
+    "Maintenance Day": "⚖️",
+    "Progress Day": "➡️",
+    "Flow Day": "🌊"
+}
+
+DAY_TYPE_WHISPERS = {
+    "Survival Day": "Move gently. The tide is low.",
+    "Maintenance Day": "Quiet effort keeps things standing.",
+    "Progress Day": "One step is still movement.",
+    "Flow Day": "Stay present. Don’t rush the current."
+}
+
+STUCK_NUDGES = {
+    "Survival Day": "If you’re stuck, try standing up and drinking some water.",
+    "Maintenance Day": "If you’re stuck, try opening the task without committing to finishing it.",
+    "Progress Day": "If you’re stuck, try setting a 25-minute timer for the priority task.",
+    "Flow Day": "If you’re stuck, remove one distraction before you begin."
+}
+
+# -------------------------------------------------
+# Helpers
+# -------------------------------------------------
+
+def soft_card():
+    return st.container(border=True)
+
+# -------------------------------------------------
+# Intro
 # -------------------------------------------------
 
 st.markdown("## Daily Capacity Planner")
 st.markdown(
-    "A gentle, capacity-aware planning tool for neurodivergent freelancers.\n\n"
+    "A calm, capacity-aware planning tool for neurodivergent freelancers.\n\n"
     "This adapts to how you feel **today**. There is nothing to optimise."
 )
 
-st.markdown("---")
-
-# -------------------------------------------------
-# How this works (optional)
-# -------------------------------------------------
-
-with st.expander("How to use this"):
+with st.expander("How this works"):
     st.markdown(
         "- Answer honestly. This is for *you*.\n"
-        "- The structure responds to your capacity, not willpower.\n"
+        "- Structure adapts to capacity, not willpower.\n"
         "- Low-energy days are valid days.\n"
         "- You can stop at any point."
     )
 
+st.markdown("---")
+
 # -------------------------------------------------
-# 1. Check-in
+# Check-in
 # -------------------------------------------------
 
-st.markdown("### How are you showing up today?")
+with soft_card():
+    st.markdown("### How are you showing up today?")
 
-energy = st.slider(
-    "Energy",
-    1, 5, 3,
-    help="Physical and mental energy combined"
-)
-
-focus = st.slider(
-    "Focus",
-    1, 5, 3,
-    help="How easy it feels to concentrate"
-)
-
-emotional_load = st.slider(
-    "Emotional load",
-    1, 5, 3,
-    help="Stress, anxiety, background emotional noise"
-)
+    energy = st.slider("Energy", 1, 5, 3)
+    focus = st.slider("Focus", 1, 5, 3)
+    emotional_load = st.slider("Emotional load", 1, 5, 3)
 
 st.markdown("---")
 
 # -------------------------------------------------
-# 2. Context
+# Context
 # -------------------------------------------------
 
-st.markdown("### What kind of workday is this?")
-
-work_mode = st.radio(
-    "",
-    ["Client Day", "Solo Day"],
-    horizontal=True
-)
+with soft_card():
+    st.markdown("### What kind of workday is this?")
+    work_mode = st.radio("", ["Client Day", "Solo Day"], horizontal=True)
 
 st.markdown("---")
 
 # -------------------------------------------------
-# 3. Interpretation
+# Interpretation
 # -------------------------------------------------
 
-capacity_score = calculate_capacity_score(
-    energy=energy,
-    focus=focus,
-    emotional_load=emotional_load
-)
-
+capacity_score = calculate_capacity_score(energy, focus, emotional_load)
 day_type = determine_day_type(capacity_score)
 
-st.markdown(f"### Today looks like a **{day_type}**")
-st.caption("This is descriptive, not a judgement.")
+icon = DAY_TYPE_ICONS.get(day_type, "")
+st.markdown(f"### {icon} {day_type}")
+st.caption(DAY_TYPE_WHISPERS.get(day_type, ""))
 
 base_structure = get_base_structure(day_type)
 final_structure = apply_work_mode_modifier(base_structure, work_mode)
@@ -103,80 +111,83 @@ final_structure = apply_work_mode_modifier(base_structure, work_mode)
 for item in final_structure:
     st.markdown(f"- {item}")
 
-st.markdown("---")
-
-# -------------------------------------------------
-# 4. What would be enough?
-# -------------------------------------------------
-
-st.markdown("### What would be enough for today?")
-
-essential_task = st.text_input(
-    "One essential thing",
-    placeholder="Small, concrete, and realistic"
-)
-
-support_task = None
-optional_task = None
-
-if day_type in ["Maintenance Day", "Progress Day", "Flow Day"]:
-    support_task = st.text_input(
-        "One supportive or low-effort task",
-        placeholder="Admin, prep, follow-up"
-    )
-
-add_optional = st.checkbox("Add an optional bonus task")
-if add_optional:
-    optional_task = st.text_input(
-        "Optional task",
-        placeholder="Only if it feels genuinely light"
-    )
+st.info(STUCK_NUDGES.get(day_type, ""))
 
 st.markdown("---")
 
 # -------------------------------------------------
-# 5. Save
+# Tasks
 # -------------------------------------------------
 
-st.markdown("### Save your plan")
+with soft_card():
+    st.markdown("### What would be enough for today?")
 
-st.caption(
-    "Nothing is stored. This is just for you."
-)
-
-if not essential_task:
-    st.caption("Add an essential task to enable export.")
-
-if st.button("Create text summary") and essential_task:
-    summary_text = build_day_summary(
-        energy=energy,
-        focus=focus,
-        emotional_load=emotional_load,
-        work_mode=work_mode,
-        day_type=day_type,
-        structure=final_structure,
-        essential_task=essential_task,
-        support_task=support_task,
-        optional_task=optional_task
+    essential_task = st.text_input(
+        "One essential thing",
+        placeholder="Small, concrete, realistic"
     )
 
-    st.download_button(
-        "Download .txt",
-        summary_text,
-        file_name=f"daily_plan_{date.today().isoformat()}.txt",
-        mime="text/plain"
-    )
+    support_task = None
+    optional_task = None
+
+    if day_type in ["Maintenance Day", "Progress Day", "Flow Day"]:
+        support_task = st.text_input(
+            "One supportive or low-effort task",
+            placeholder="Admin, prep, follow-up"
+        )
+
+    if st.checkbox("Add an optional bonus task"):
+        optional_task = st.text_input(
+            "Optional task",
+            placeholder="Only if it feels genuinely light"
+        )
 
 st.markdown("---")
 
 # -------------------------------------------------
-# 6. Gentle close
+# Save
+# -------------------------------------------------
+
+with soft_card():
+    st.markdown("### Save your plan")
+    st.caption("Nothing is stored. This is just for you.")
+
+    if not essential_task:
+        st.caption("Add an essential task to enable export.")
+
+    if st.button("Create text summary") and essential_task:
+        summary_text = build_day_summary(
+            energy=energy,
+            focus=focus,
+            emotional_load=emotional_load,
+            work_mode=work_mode,
+            day_type=day_type,
+            structure=final_structure,
+            essential_task=essential_task,
+            support_task=support_task,
+            optional_task=optional_task
+        )
+
+        st.download_button(
+            "Download .txt",
+            summary_text,
+            file_name=f"daily_plan_{date.today().isoformat()}.txt",
+            mime="text/plain"
+        )
+
+        st.success("Your plan is ready. You can stop here if you want.")
+
+st.markdown("---")
+
+# -------------------------------------------------
+# Close
 # -------------------------------------------------
 
 st.markdown("### Closing the day")
-
 st.checkbox("I worked within my capacity today")
 st.text_input("One word for today", placeholder="Optional")
+
+st.progress(1.0, text="That’s enough for today.")
 
 st.caption(
     "This is not a productivity system. "
